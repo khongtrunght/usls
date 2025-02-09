@@ -105,6 +105,7 @@ pub struct Options {
     pub vocab_txt: Option<String>,  // vacab.txt file, not kv pairs
     pub temperature: f32,
     pub topp: f32,
+    pub vocab: Option<Vec<String>>,
 
     // For DB
     pub unclip_ratio: Option<f32>,
@@ -186,6 +187,7 @@ impl Default for Options {
             generation_config_file: None,
             vocab_file: None,
             vocab_txt: None,
+            vocab: None,
             min_width: None,
             min_height: None,
             unclip_ratio: Some(1.5),
@@ -228,19 +230,23 @@ impl Options {
         };
 
         // try to build vocab from `vocab.txt`
-        let vocab: Vec<String> = match &self.vocab_txt {
-            Some(x) => {
-                let file = if !std::path::PathBuf::from(&x).exists() {
-                    Hub::default().try_fetch(&format!("{}/{}", self.model_name, x))?
-                } else {
-                    x.to_string()
-                };
-                std::fs::read_to_string(file)?
-                    .lines()
-                    .map(|line| line.to_string())
-                    .collect()
+        let vocab = if let Some(x) = self.vocab.as_ref() {
+            x.clone()
+        } else {
+            match &self.vocab_txt {
+                Some(x) => {
+                    let file = if !std::path::PathBuf::from(&x).exists() {
+                        Hub::default().try_fetch(&format!("{}/{}", self.model_name, x))?
+                    } else {
+                        x.to_string()
+                    };
+                    std::fs::read_to_string(file)?
+                        .lines()
+                        .map(|line| line.to_string())
+                        .collect()
+                }
+                None => vec![],
             }
-            None => vec![],
         };
 
         Ok(Processor {
