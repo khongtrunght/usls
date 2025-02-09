@@ -68,11 +68,11 @@ impl Processor {
         self.image0s_size.clear();
     }
 
-    pub fn process_images(&mut self, xs: &[DynamicImage]) -> Result<X> {
+    pub fn process_images(&self, xs: &[DynamicImage]) -> Result<X> {
         // self.reset_image0_status();
-        let (mut x, image0s_size, scale_factors_hw) = self.par_resize(xs)?;
-        self.image0s_size = image0s_size;
-        self.scale_factors_hw = scale_factors_hw;
+        let (mut x, _image0s_size, _scale_factors_hw) = self.par_resize(xs)?; //QUICKFIX:
+                                                                              // self.image0s_size = image0s_size;
+                                                                              // self.scale_factors_hw = scale_factors_hw;
         if self.do_normalize {
             x = x.normalize(0., 255.)?;
         }
