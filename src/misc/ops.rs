@@ -7,7 +7,9 @@ use fast_image_resize::{
     FilterType, ResizeAlg, ResizeOptions, Resizer,
 };
 use image::{DynamicImage, GenericImageView};
-use ndarray::{concatenate, s, Array, Array3, ArrayView1, Axis, IntoDimension, Ix2, IxDyn, Zip};
+use ndarray::{
+    array, concatenate, s, Array, Array3, ArrayView1, Axis, IntoDimension, Ix2, IxDyn, Slice, Zip,
+};
 
 use rayon::prelude::*;
 
@@ -28,6 +30,40 @@ pub enum Ops<'a> {
 }
 
 impl Ops<'_> {
+    pub fn rgb_to_grayscale(x: &mut Array<f32, IxDyn>) -> Result<()> {
+        // Validate input dimensions - last dimension should be 3 for RGB channels
+        if x.shape().last() != Some(&3) {
+            anyhow::bail!(
+                "Invalid input shape: last dimension must be 3 (RGB), got {:?}",
+                x.shape()
+            );
+        }
+
+        // Create a view that collapses all dimensions except channels into one
+        let view = x.view();
+        let collapsed = view.into_shape_with_order((x.len() / 3, 3))?;
+
+        // Convert to grayscale using ITU-R BT.601 coefficients
+        let gray_values = collapsed.dot(&array![0.299, 0.587, 0.114]);
+
+        // Determine the shape of the image without the channel dimension.
+        let non_channel_shape = &x.shape()[..x.ndim() - 1];
+
+        // Reshape gray_values to the non-channel shape and then insert a new axis
+        // so that its shape matches the channel slice shape (e.g., [72, 112, 112, 1]).
+        let gray_values = gray_values
+            .into_shape_with_order(non_channel_shape)?
+            .insert_axis(Axis(x.ndim() - 1));
+
+        // Update each channel with the grayscale value.
+        // Each slice has the same shape as gray_values.
+        for i in 0..3 {
+            let mut channel = x.slice_axis_mut(Axis(x.ndim() - 1), Slice::from(i..i + 1));
+            channel.assign(&gray_values);
+        }
+
+        Ok(())
+    }
     pub fn normalize(x: &mut Array<f32, IxDyn>, min: f32, max: f32) -> Result<()> {
         if min >= max {
             anyhow::bail!(

@@ -38,6 +38,7 @@ pub struct Processor {
     pub vocab: Vec<String>,
     pub unsigned: bool,
     pub logits_sampler: Option<LogitsSampler>,
+    pub do_grayscale: bool,
 }
 
 impl Default for Processor {
@@ -58,6 +59,7 @@ impl Default for Processor {
             vocab: vec![],
             unsigned: false,
             logits_sampler: None,
+            do_grayscale: false,
         }
     }
 }
@@ -69,10 +71,12 @@ impl Processor {
     }
 
     pub fn process_images(&self, xs: &[DynamicImage]) -> Result<X> {
-        // self.reset_image0_status();
-        let (mut x, _image0s_size, _scale_factors_hw) = self.par_resize(xs)?; //QUICKFIX:
-                                                                              // self.image0s_size = image0s_size;
-                                                                              // self.scale_factors_hw = scale_factors_hw;
+        let (mut x, _image0s_size, _scale_factors_hw) = self.par_resize(xs)?;
+
+        if self.do_grayscale {
+            x = x.grayscale()?;
+        }
+
         if self.do_normalize {
             x = x.normalize(0., 255.)?;
         }

@@ -177,6 +177,11 @@ impl X {
         Ok(self)
     }
 
+    pub fn grayscale(mut self) -> Result<Self> {
+        Ops::rgb_to_grayscale(&mut self.0)?;
+        Ok(self)
+    }
+
     pub fn standardize(mut self, mean: &[f32], std: &[f32], dim: usize) -> Result<Self> {
         Ops::standardize(&mut self.0, mean.into(), std.into(), dim)?;
         Ok(self)

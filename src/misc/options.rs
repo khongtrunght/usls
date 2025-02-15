@@ -114,6 +114,9 @@ pub struct Options {
     // For SAM
     pub sam_kind: Option<SamKind>,
     pub low_res_mask: Option<bool>,
+
+    // For embedding
+    pub apply_grayscale: Option<bool>,
 }
 
 impl Default for Options {
@@ -196,6 +199,7 @@ impl Default for Options {
             low_res_mask: None,
             temperature: 1.,
             topp: 0.,
+            apply_grayscale: None,
         }
     }
 }
@@ -260,6 +264,7 @@ impl Options {
             image_std: self.image_std.clone(),
             nchw: self.nchw,
             unsigned: self.unsigned,
+            do_grayscale: self.apply_grayscale.unwrap_or(false),
             tokenizer,
             vocab,
             logits_sampler: Some(logits_sampler),
